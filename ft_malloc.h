@@ -1,48 +1,40 @@
 #ifndef FT_MALLOC_H
 # define FT_MALLOC_H
 
-// Size of "pages" in bytes
-// LARGE have no limits !
-#define	n_SIZE		500		// max of tiny
-#define	N_SIZE		1		// x getpagesize()
-#define	m_SIZE		2000	// max of small
-#define	M_SIZE		2		// x getpagesize()
+// SIZE fois getpagesize()
+# define TINY_SIZE	4
+# define SMALL_SIZE	8
+# define NB_BLOCK	8
 
-#include <sys/mman.h>
-#include <unistd.h>
+# include <sys/mman.h>
+# include <unistd.h>
 
 // TO DEL
-#include <stdio.h>
-#include <string.h>
+# include <stdio.h>
+# include <string.h>
 
-typedef struct	s_tinychk
+// Structs
+typedef struct	s_chunk
 {
-	int					size;
+	size_t				size;
 	short				isfree;
-	struct s_tinychk	*next;
-}				t_tinychk;
+	struct s_chunk 		*next;
+}				t_chunk;
 
-typedef struct	s_smallchk
+typedef struct	s_page
 {
-	int					size;
-	short				isfree;
-	struct s_smallchk	*next;
-}				t_smallchk;
+	size_t				free_size;
+	struct s_chunk		chunk;
+	struct s_page		*next;
+}				t_page;
 
-typedef struct	s_largechk
+typedef struct 	s_area
 {
-	int					size;
-	short				isfree;
-	struct s_largechk	*next;
-}				t_largechk;
+	struct s_page	*small;
+	struct s_page	*tiny;
+	struct s_block	*large;
+}				t_area;
 
-typedef struct s_chunks
-{
-	struct s_tinychk	*tiny;
-	struct s_smallchk	*small;
-	struct s_largechk	*large;
-}				t_chunks;
-
-void		*ft_malloc(size_t size);
+void			*ft_malloc(size_t size);
 
 #endif

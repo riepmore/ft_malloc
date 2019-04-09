@@ -1,95 +1,59 @@
 #include "ft_malloc.h"
 #include <stdlib.h>
 
-void *global_chunks = 0;
+struct s_area 	area = {0};
 
-int			cut_tinychunk(t_tinychk *chunk)
+int			create_new_page(t_page *page, size_t size, size_t type)
 {
-	t_tinychk	*first;
-	t_tinychk	*tmp;
-	int			i;
+	t_page		new;
 
-	if (chunk == 0)
-		return (-1);
-	first = chunk;
-	i = 0;
-	while (i < 4)
+	printf("Créeons une page...\n");
+	if (page != 0)
 	{
-		// printf("%p\n", chunk);
-		// printf("%p\n", chunk + (chunk->size / 2));
-		// exit(1);
-		printf("%d\n", chunk + (chunk->size / 2));
-
-		tmp = chunk + (chunk->size / 2);
-
-		chunk->next = chunk + (chunk->size / 2);
-		chunk = chunk->next;
-		chunk->size = chunk->size / 2;
-		exit(1);
-		i++;
+		printf("Je vais chercher ma derniere page car je ne suis pas vide.\n");
+		while (page->next != 0)
+			page = page->next;
+		page->next = &new;
 	}
-	printf("bg\n");
-	chunk = 0;
-	chunk = first;
-	return (0);
-}
-
-int			cut_smallchunk(t_smallchk *chunk)
-{
-	t_smallchk	*tmp;
-	int			i;
-
-	if (chunk == 0)
-		return (-1);
-	tmp = chunk;
-	i = 0;
-	while (i < 4)
-	{
-		chunk->next = chunk + (chunk->size / 2);
-		chunk->size = chunk->size / 2;
-		chunk = chunk->next;
-		i++;
-	}
-	chunk = 0;
-	chunk = tmp;
-	return (0);
-}
-
-int			init_malloc()
-{
-	t_chunks	global;
-
-	global_chunks = &global;
-	global.tiny = 0;
-	global.tiny = (t_tinychk*)mmap(0, sizeof(t_tinychk) + (getpagesize() * N_SIZE), PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-	if (global.tiny == 0)
-		return (-1);
-	global.tiny->size = getpagesize() * N_SIZE;
-	global.tiny->isfree = 1;
-	global.tiny->next = 0;
-	global.small = (t_smallchk*)mmap(0, sizeof(t_tinychk) + (getpagesize() * M_SIZE), PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-	if (global.small == 0)
-		return (-1);
-	global.small->size = getpagesize() * M_SIZE;
-	global.small->isfree = 1;
-	global.small->next = 0;
-	if (cut_tinychunk(global.tiny) == -1)
-		return (-1);
-	if (cut_smallchunk(global.small) == -1)
-		return (-1);
+	new.free_size = (size_t)(getpagesize() * type) / 2;
+	new.next = 0;
+	(void)size;
+	printf("bon, j'ai creer un truc....\n");
 	return (0);
 }
 
 void		*ft_malloc(size_t size)
 {
-	if (global_chunks == 0) //first call of malloc
+	t_page		*page;
+
+	page = 0;
+	if (size < 1)
+		return (0);
+	// Voir si la taille == (TINY_SIZE * getpagesize()) / 2
+	if (size < (size_t)((TINY_SIZE * getpagesize()) / 2))
 	{
-		if (init_malloc() == -1) // jcrois que j'initialise
+		printf("Tiny malloc detected\n");
+		page = area.tiny;
+		while (page)
 		{
-			printf("pas pu initialiser mon malloc mdr\n");
-			return (0);
+			page = page->next;
+			if (page->free_size >= size)
+			{
+				printf("J'ai trouvé un emplacement mémwar !\n");
+				exit(1);
+			}
 		}
+		// page = last_page(area.tiny);
+		if (create_new_page(page, size, TINY_SIZE) == -1)
+			return (0);
 	}
-	printf("bon jfais koi avec %zu mtn\n", size);
+	else if (size < (size_t)((SMALL_SIZE * getpagesize()) / 2))
+	{
+		printf("Small malloc detected\n");
+	}
+	else
+	{
+		printf("Large malloc detected\n");
+	}
 	return (0);
 }
