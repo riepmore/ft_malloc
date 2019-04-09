@@ -4,7 +4,11 @@
 // SIZE fois getpagesize()
 # define TINY_SIZE	4
 # define SMALL_SIZE	8
-# define NB_BLOCK	8
+
+# define NB_CHUNKS	3
+
+#define TRUE		0
+#define FALSE		1
 
 # include <sys/mman.h>
 # include <unistd.h>
@@ -19,19 +23,20 @@ typedef struct	s_chunk
 	size_t				size;
 	short				isfree;
 	struct s_chunk 		*next;
+	size_t 				addr;
 }				t_chunk;
 
 typedef struct	s_page
 {
 	size_t				free_size;
-	struct s_chunk		chunk;
+	struct s_chunk		*chunk;
 	struct s_page		*next;
 }				t_page;
 
 typedef struct 	s_area
 {
-	struct s_page	*small;
 	struct s_page	*tiny;
+	struct s_page	*small;
 	struct s_block	*large;
 }				t_area;
 

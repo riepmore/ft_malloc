@@ -1,7 +1,39 @@
 #include "ft_malloc.h"
 #include <stdlib.h>
 
-struct s_area 	area = {0};
+struct s_area 	 area; // zeroed ?
+
+t_chunk		*create_new_chunk(size_t type)
+{
+	t_chunk		*new;
+	t_chunk		*tmp;
+	int			size;
+	int			i;
+
+	i = 0;
+	size = type * getpagesize();
+	new = (t_chunk*)mmap(0, sizeof(t_chunk) + size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+	tmp = new;
+	if (new == 0)
+		return (0);
+	while (i < NB_CHUNKS)
+	{
+		size /= 2;
+		new->size = size;
+		new->addr = (size_t)(&new) + sizeof(t_chunk);
+		new->isfree = TRUE;
+		// new->next = *new + size; // aïe
+		new = new->next;
+		i++;
+		printf("%d tour de boucle\n", i);
+		printf("addr: %zu\n", new->addr);
+		printf("new      : %zd\nnew->next: %zd\n", &new, &new->next);
+		munmap(tmp, size);
+		exit(1);
+	}
+	printf("fiou\n");
+	return (tmp);
+}
 
 int			create_new_page(t_page *page, size_t size, size_t type)
 {
@@ -17,8 +49,10 @@ int			create_new_page(t_page *page, size_t size, size_t type)
 	}
 	new.free_size = (size_t)(getpagesize() * type) / 2;
 	new.next = 0;
-	(void)size;
 	printf("bon, j'ai creer un truc....\n");
+	if ((new.chunk = create_new_chunk(TINY_SIZE)) == 0)
+		return (-1);
+	(void)size;
 	return (0);
 }
 
