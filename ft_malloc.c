@@ -6,33 +6,32 @@ struct s_area 	 area; // zeroed ?
 t_chunk		*create_new_chunk(size_t type)
 {
 	t_chunk		*new;
-	t_chunk		*tmp;
+	t_chunk		*ptr;
 	int			size;
 	int			i;
 
-	i = 0;
+	i = NB_CHUNKS;
 	size = type * getpagesize();
-	new = (t_chunk*)mmap(0, sizeof(t_chunk) + size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-	tmp = new;
+	new = (t_chunk*)mmap(0, (sizeof(t_chunk) * NB_CHUNKS) + size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+	ptr = new;
+	size /= NB_CHUNKS;
 	if (new == 0)
 		return (0);
-	while (i < NB_CHUNKS)
+	while (i > 0)
 	{
-		size /= 2;
+		printf("addr of new :     %p\n", new);
 		new->size = size;
-		new->addr = (size_t)(&new) + sizeof(t_chunk);
+		new->addr = new + sizeof(t_chunk);
+		printf("chunk start addr: %p\n\n", new->addr);
 		new->isfree = TRUE;
-		// new->next = *new + size; // aïe
+		new->next = (void*)new + (sizeof(t_chunk) + size); // aïe
 		new = new->next;
-		i++;
-		printf("%d tour de boucle\n", i);
-		printf("addr: %zu\n", new->addr);
-		printf("new      : %zd\nnew->next: %zd\n", &new, &new->next);
-		munmap(tmp, size);
-		exit(1);
+		i--;
+		// munmap(new, (sizeof(t_chunk) * NB_CHUNKS) + (size * NB_CHUNKS));
+		// exit(1);
 	}
 	printf("fiou\n");
-	return (tmp);
+	return (new);
 }
 
 int			create_new_page(t_page *page, size_t size, size_t type)
@@ -47,7 +46,7 @@ int			create_new_page(t_page *page, size_t size, size_t type)
 			page = page->next;
 		page->next = &new;
 	}
-	new.free_size = (size_t)(getpagesize() * type) / 2;
+	new.max_free_size = (size_t)(getpagesize() * type) / 2;
 	new.next = 0;
 	printf("bon, j'ai creer un truc....\n");
 	if ((new.chunk = create_new_chunk(TINY_SIZE)) == 0)
@@ -71,7 +70,7 @@ void		*ft_malloc(size_t size)
 		while (page)
 		{
 			page = page->next;
-			if (page->free_size >= size)
+			if (page->max_free_size >= size)
 			{
 				printf("J'ai trouvé un emplacement mémwar !\n");
 				exit(1);

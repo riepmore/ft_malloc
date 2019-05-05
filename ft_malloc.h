@@ -22,13 +22,13 @@ typedef struct	s_chunk
 {
 	size_t				size;
 	short				isfree;
+	void 				*addr;
 	struct s_chunk 		*next;
-	size_t 				addr;
 }				t_chunk;
 
 typedef struct	s_page
 {
-	size_t				free_size;
+	size_t				max_free_size;
 	struct s_chunk		*chunk;
 	struct s_page		*next;
 }				t_page;
