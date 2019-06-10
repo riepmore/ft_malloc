@@ -2,10 +2,10 @@
 # define FT_MALLOC_H
 
 // SIZE fois getpagesize()
-# define TINY_SIZE	4
-# define SMALL_SIZE	8
+# define TINY_SIZE	2
+# define SMALL_SIZE	4
 
-# define NB_CHUNKS	3
+// # define NB_CHUNKS	3
 
 #define TRUE		0
 #define FALSE		1
@@ -28,13 +28,16 @@ typedef struct	s_chunk
 
 typedef struct	s_page
 {
-	size_t				max_free_size;
+	size_t				free_size;
 	struct s_chunk		*chunk;
 	struct s_page		*next;
 }				t_page;
 
 typedef struct 	s_area
 {
+	size_t			nb_pages_T;
+	size_t			nb_pages_S;
+	size_t			nb_pages_L;
 	struct s_page	*tiny;
 	struct s_page	*small;
 	struct s_block	*large;
