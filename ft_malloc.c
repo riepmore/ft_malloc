@@ -1,78 +1,130 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   ft_malloc.c                                        :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: pmore <pmore@student.42.fr>                +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2019/06/11 15:36:31 by pmore             #+#    #+#             */
+/*   Updated: 2019/06/16 21:35:50 by pmore            ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "ft_malloc.h"
 #include <stdlib.h>
 
-struct s_area 	 area; // zeroed ?
-
-t_chunk		*create_new_chunk(size_t type)
+void		*create_new_chunk(t_page *page, size_t size)
 {
-	t_chunk		*new;
-	int			size;
+	int			i;
+	size_t		addr_move;
 
-	size = type * getpagesize();
-	new = (t_chunk*)mmap(0, sizeof(t_chunk) + size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-	if (new == 0)
-		return (0);
-	new->size = size;
-	new->addr = (void*)new + sizeof(t_chunk);
-	new->isfree = TRUE;
-	new->next = 0;
-	return (new);
+	addr_move = 0;
+	i = 0;
+	while (i < (NB_CHUNKS - 1))
+	{
+		size /= 2;
+		page->chunks[i].size = size;
+		page->chunks[i].isfree = TRUE;
+		page->chunks[i].addr = ((void*)page + sizeof(t_chunk)) + addr_move;
+		addr_move += size;
+		i++;
+	}
+	// On repete le boucle car le dernier chunk doit avoir les mêmes caracteristiques que l'avant dernier.
+	page->chunks[i].size = size;
+	page->chunks[i].isfree = TRUE;
+	page->chunks[i].addr = ((void*)page + sizeof(t_chunk)) + addr_move;
+	return (page);
 }
 
-int			create_new_page(t_page *page, size_t size, size_t type)
+void		*create_new_page(t_page *page, size_t size, size_t type)
 {
-	t_page		new;
+	t_page		*new;
+	size_t		page_size;
 
-	printf("Créeons une page...\n");
+	new = 0;
+	page_size = type * getpagesize();
+	new = (t_page*)mmap(0, sizeof(t_page*) + page_size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+	if (new == MAP_FAILED)
+		return (0);
+	new->total_free = page_size;
+	new->total_size = page_size;
+	new->max_free = page_size / 2;
+	new->prev = page;
 	if (page != 0)
+		page->next = new;
+	else
+		page = new;
+	new->next = 0;
+	increment_page_number(type);
+	create_new_chunk(new, page_size);
+	return (assign_alloc(new, size, type));
+}
+
+void		*create_large_page(size_t size)
+{
+	t_lpage		*new;
+	t_lpage		*tmp;
+
+	new = 0;
+	tmp = area.large;
+	new = (t_lpage*)mmap(0, sizeof(t_lpage*) + size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+	if (new == MAP_FAILED)
+		return (0);
+	new->size = size;
+	new->addr = ((void*)new + sizeof(t_lpage));
+	if (tmp)
 	{
-		printf("Je vais chercher ma derniere page car je ne suis pas vide.\n");
-		while (page->next != 0)
-			page = page->next;
-		page->next = &new;
+		while (tmp->next)
+			tmp = tmp->next;
+		new->prev = tmp;
+		new->next = 0;
+		tmp->next = new;
 	}
-	new.free_size = (size_t)(getpagesize() * type) / 2;
-	new.next = 0;
-	printf("bon, j'ai creer un truc....\n");
-	if ((new.chunk = create_new_chunk(TINY_SIZE)) == 0)
-		return (-1);
-	(void)size;
-	return (0);
+	else
+		tmp = new;
+	area.nb_pages_L++;
+	return (new->addr);
 }
 
 void		*ft_malloc(size_t size)
 {
 	t_page		*page;
+	t_page		*prev;
+	size_t		type;
 
+	type = 0;
 	page = 0;
+	prev = 0;
 	if (size < 1)
 		return (0);
-
+	size = (size + (8 - 1)) & -8; // align size to 8
 	// Voir si la taille == (TINY_SIZE * getpagesize()) / 2
-	if (size < (size_t)((TINY_SIZE * getpagesize()) / 2))
+	if (size < (size_t)(TINY_SIZE * getpagesize()))
 	{
 		printf("Tiny malloc detected\n");
 		page = area.tiny;
-		while (page)
-		{
-			page = page->next;
-			if (page->free_size >= size)
-			{
-				printf("J'ai trouvé un emplacement mémwar !\n");
-				exit(1);
-			}
-		}
-		// page = last_page(area.tiny);
-		if (create_new_page(page, size, TINY_SIZE) == -1)
-			return (0);
+		type = TINY_SIZE;
+
 	}
-	else if (size < (size_t)((SMALL_SIZE * getpagesize()) / 2))
+	else if (size < (size_t)(SMALL_SIZE * getpagesize()))
 	{
 		printf("Small malloc detected\n");
+		page = area.small;
+		type = TINY_SIZE;
 	}
 	else
 	{
 		printf("Large malloc detected\n");
+		return (create_large_page(size));
 	}
-	return (0);
+	if (page == 0)
+		return (create_new_page(page, size, type)); // Pas encore de page
+	while (page)
+	{
+		if (page->max_free >= size)
+			return (assign_alloc(page, size, type)); // Trouvé de la place dans un chunk
+		prev = page;
+		page = page->next;
+	}
+	return (create_new_page(prev, size, type)); // Pas de place dans les chunks -> creation d'une nouvelle page.
 }
