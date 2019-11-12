@@ -6,7 +6,7 @@
 /*   By: pmore <pmore@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/06/11 15:37:04 by pmore             #+#    #+#             */
-/*   Updated: 2019/06/16 21:36:20 by pmore            ###   ########.fr       */
+/*   Updated: 2019/11/12 20:22:30 by pmore            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,7 @@
 #define FALSE		1
 
 # include <sys/mman.h>
+# include <sys/resource.h>
 # include <unistd.h>
 # include "libft/libft.h"
 
@@ -61,6 +62,8 @@ typedef struct	s_lpage
 
 typedef struct 	s_area
 {
+	rlim_t			rlim;
+	rlim_t			cur_alloc;
 	size_t			nb_pages_T;
 	size_t			nb_pages_S;
 	size_t			nb_pages_L;

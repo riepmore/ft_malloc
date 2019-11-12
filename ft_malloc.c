@@ -6,7 +6,7 @@
 /*   By: pmore <pmore@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/06/11 15:36:31 by pmore             #+#    #+#             */
-/*   Updated: 2019/06/16 21:35:50 by pmore            ###   ########.fr       */
+/*   Updated: 2019/11/12 20:33:40 by pmore            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,7 +40,16 @@ void		*create_new_page(t_page *page, size_t size, size_t type)
 {
 	t_page		*new;
 	size_t		page_size;
+	struct rlimit rlp;
 
+	getrlimit(RLIMIT_AS, &rlp);
+	printf("RLIMIT_CUR: %li | RLIMIT_MAX: %li\n", (long)rlp.rlim_cur, (long)rlp.rlim_max);
+	if ((long)area.cur_alloc + size >= (long)rlp.rlim_cur)
+	{
+		printf("ya pu de place rlimit truc\n");
+		return (0);
+	}
+	area.cur_alloc += size;
 	new = 0;
 	page_size = type * getpagesize();
 	new = (t_page*)mmap(0, sizeof(t_page*) + page_size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);

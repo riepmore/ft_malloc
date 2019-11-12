@@ -6,7 +6,7 @@
 /*   By: pmore <pmore@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/06/12 23:08:57 by pmore             #+#    #+#             */
-/*   Updated: 2019/06/16 21:56:42 by pmore            ###   ########.fr       */
+/*   Updated: 2019/11/12 20:35:59 by pmore            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -80,6 +80,7 @@ void		free_page(t_page *page, size_t type)
 		area.nb_pages_S--;
 	}
 	munmap(page, sizeof(t_page*) + page->total_size);
+	area.cur_alloc -= sizeof(t_page*) + page->total_size;
 }
 
 int			free_loop(t_page *page, void *addr, size_t type)
@@ -116,7 +117,6 @@ int			free_loop(t_page *page, void *addr, size_t type)
 	return (0);
 }
 
-// sale sale sale
 void		ft_free(void *addr)
 {
 	t_page		*page;
