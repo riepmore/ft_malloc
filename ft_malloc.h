@@ -6,7 +6,7 @@
 /*   By: pmore <pmore@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/06/11 15:37:04 by pmore             #+#    #+#             */
-/*   Updated: 2019/11/12 20:22:30 by pmore            ###   ########.fr       */
+/*   Updated: 2019/11/12 20:54:36 by pmore            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,7 +44,6 @@ typedef struct	s_chunk
 typedef struct	s_page
 {
 	size_t				total_free; // total de memoire libre
-	size_t				max_free;   // taille de la chunk la plus grande
 	struct s_chunk		chunks[NB_CHUNKS];
 	struct s_page		*next;
 	struct s_page		*prev;

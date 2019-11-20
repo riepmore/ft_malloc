@@ -6,7 +6,7 @@
 /*   By: pmore <pmore@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/06/11 15:36:31 by pmore             #+#    #+#             */
-/*   Updated: 2019/11/12 20:33:40 by pmore            ###   ########.fr       */
+/*   Updated: 2019/11/12 21:09:02 by pmore            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -106,7 +106,7 @@ void		*ft_malloc(size_t size)
 	prev = 0;
 	if (size < 1)
 		return (0);
-	size = (size + (8 - 1)) & -8; // align size to 8
+	size = (size + (8 - 1)) & -8; // align size to 8 //// C'EST SÛR QUE Y A BESOIN DE ÇA ??????
 	// Voir si la taille == (TINY_SIZE * getpagesize()) / 2
 	if (size < (size_t)(TINY_SIZE * getpagesize()))
 	{
