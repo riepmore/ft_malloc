@@ -6,7 +6,7 @@
 /*   By: pmore <pmore@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/06/11 15:37:04 by pmore             #+#    #+#             */
-/*   Updated: 2019/11/12 20:54:36 by pmore            ###   ########.fr       */
+/*   Updated: 2019/11/27 11:37:12 by pmore            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,11 +17,14 @@
 # define TINY_SIZE	2
 # define SMALL_SIZE	4
 # define LARGE_SIZE 0
-
 # define NB_CHUNKS	5
-
-#define TRUE		0
-#define FALSE		1
+# define TRUE		0
+# define FALSE		1
+// for binary
+# BIN_MAXSIZE		0xFFFF
+# BIN_MINSIZE		0x0000
+# BIN_USED			0x01
+# BIN_FREE			0x00
 
 # include <sys/mman.h>
 # include <sys/resource.h>
