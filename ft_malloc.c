@@ -6,7 +6,7 @@
 /*   By: pmore <pmore@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/06/11 15:36:31 by pmore             #+#    #+#             */
-/*   Updated: 2019/11/12 21:09:02 by pmore            ###   ########.fr       */
+/*   Updated: 2019/11/28 15:33:35 by pmore            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,9 +55,8 @@ void		*create_new_page(t_page *page, size_t size, size_t type)
 	new = (t_page*)mmap(0, sizeof(t_page*) + page_size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 	if (new == MAP_FAILED)
 		return (0);
-	new->total_free = page_size;
 	new->total_size = page_size;
-	new->max_free = page_size / 2;
+	new->total_free = page_size;
 	new->prev = page;
 	if (page != 0)
 		page->next = new;
@@ -97,7 +96,7 @@ void		*create_large_page(size_t size)
 
 void		*ft_malloc(size_t size)
 {
-	t_page		*page;
+	t_page		page;
 	t_page		*prev;
 	size_t		type;
 
@@ -106,7 +105,7 @@ void		*ft_malloc(size_t size)
 	prev = 0;
 	if (size < 1)
 		return (0);
-	size = (size + (8 - 1)) & -8; // align size to 8 //// C'EST SÛR QUE Y A BESOIN DE ÇA ??????
+	size = (size + (8 - 1)) & -8; // align size to 8
 	// Voir si la taille == (TINY_SIZE * getpagesize()) / 2
 	if (size < (size_t)(TINY_SIZE * getpagesize()))
 	{
@@ -124,7 +123,9 @@ void		*ft_malloc(size_t size)
 	else
 	{
 		printf("Large malloc detected\n");
-		return (create_large_page(size));
+		printf("Will wait for this one, i skip.\n");
+		return (0);
+		// return (create_large_page(size));
 	}
 	if (page == 0)
 		return (create_new_page(page, size, type)); // Pas encore de page

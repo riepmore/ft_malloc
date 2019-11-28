@@ -6,7 +6,7 @@
 /*   By: pmore <pmore@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/06/11 15:37:04 by pmore             #+#    #+#             */
-/*   Updated: 2019/11/27 11:37:12 by pmore            ###   ########.fr       */
+/*   Updated: 2019/11/28 15:15:36 by pmore            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,14 +17,15 @@
 # define TINY_SIZE	2
 # define SMALL_SIZE	4
 # define LARGE_SIZE 0
-# define NB_CHUNKS	5
 # define TRUE		0
 # define FALSE		1
 // for binary
-# BIN_MAXSIZE		0xFFFF
-# BIN_MINSIZE		0x0000
+# BIN_MAXSIZE		0xFFFFFFFF
+# BIN_MINSIZE		0x00000000
 # BIN_USED			0x01
 # BIN_FREE			0x00
+// HEADER EXAMPLE:  USED     SIZE        PADDING  |                     DATA
+//                  [01] [00 00 00 10] [00 00 00] | [AF 14 78 A5 CD D7 E0 00 00 45 95 C4 5F 71 10 FF]
 
 # include <sys/mman.h>
 # include <sys/resource.h>
@@ -39,22 +40,22 @@
 typedef struct	s_chunk
 {
 	size_t				size;
-	short				isfree;
 	void 				*addr;
-	// struct s_chunk 		*next; // ca sert a R
+	struct s_chunk 		*next;
 }				t_chunk;
 
 typedef struct	s_page
 {
+	size_t				total_size; // taille totale (FREE et NON-FREE)
 	size_t				total_free; // total de memoire libre
-	struct s_chunk		chunks[NB_CHUNKS];
+	void				*addr;		// l'addresse mémwar
+	void				*freeaddr;	// ptr vers l'addr mémw dispo
+	struct s_chunk		*chunks;
 	struct s_page		*next;
 	struct s_page		*prev;
-	size_t				total_size; // taille totale (FREE et NON-FREE)
-	void				*addr;		// l'addresse mémwar
 }				t_page;
 
-typedef struct	s_lpage
+typedef struct	s_lpage // PAS ENCORE TOUCHÉ
 {
 	struct s_lpage		*next;
 	struct s_lpage		*prev;
