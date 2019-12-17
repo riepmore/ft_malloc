@@ -6,7 +6,7 @@
 /*   By: pmore <pmore@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/06/11 15:36:31 by pmore             #+#    #+#             */
-/*   Updated: 2019/11/28 15:33:35 by pmore            ###   ########.fr       */
+/*   Updated: 2019/12/17 02:29:40 by pmore            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,57 +15,66 @@
 
 void		*create_new_chunk(t_page *page, size_t size)
 {
+	t_chunk		new;
+	t_chunk		*tmp;
 	int			i;
-	size_t		addr_move;
 
-	addr_move = 0;
-	i = 0;
-	while (i < (NB_CHUNKS - 1))
+	if (page->left_free < size) // should not happen, maybe to del
 	{
-		size /= 2;
-		page->chunks[i].size = size;
-		page->chunks[i].isfree = TRUE;
-		page->chunks[i].addr = ((void*)page + sizeof(t_chunk)) + addr_move;
-		addr_move += size;
-		i++;
+		printf("Chunk creation error: not enough space in the page\n");
+		return (0);
 	}
-	// On repete le boucle car le dernier chunk doit avoir les mêmes caracteristiques que l'avant dernier.
-	page->chunks[i].size = size;
-	page->chunks[i].isfree = TRUE;
-	page->chunks[i].addr = ((void*)page + sizeof(t_chunk)) + addr_move;
-	return (page);
+	i = 0;
+	new.size = size;
+	new.addr = page->next_addr;
+	page->left_free -= size;
+	printf("next_addr: %p\n", (void*)page->next_addr);
+	page->next_addr += size;
+	printf("next_addr: %p\n", (void*)page->next_addr);
+	if (page->chunks == 0)
+		page->chunks = &new;
+	else
+	{
+		tmp = page->chunks;
+		while (tmp->next != 0)
+			tmp = tmp->next;
+		tmp->next = &new;
+	}
+	return (new.addr);
 }
 
 void		*create_new_page(t_page *page, size_t size, size_t type)
 {
-	t_page		*new;
-	size_t		page_size;
-	struct rlimit rlp;
+	t_page			new;
+	size_t			page_size;
+	struct rlimit 	rlp;
 
 	getrlimit(RLIMIT_AS, &rlp);
 	printf("RLIMIT_CUR: %li | RLIMIT_MAX: %li\n", (long)rlp.rlim_cur, (long)rlp.rlim_max);
-	if ((long)area.cur_alloc + size >= (long)rlp.rlim_cur)
+	if ((long)(area.cur_alloc + size) >= (long)rlp.rlim_cur)
 	{
 		printf("ya pu de place rlimit truc\n");
 		return (0);
 	}
-	area.cur_alloc += size;
-	new = 0;
 	page_size = type * getpagesize();
-	new = (t_page*)mmap(0, sizeof(t_page*) + page_size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-	if (new == MAP_FAILED)
+	new.addr = (void*)mmap(0, page_size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+	if (new.addr == MAP_FAILED)
+	{
+		printf("MMAP FAILED\n");
 		return (0);
-	new->total_size = page_size;
-	new->total_free = page_size;
-	new->prev = page;
+	}
+	area.cur_alloc += size;
+	new.total_size = page_size;
+	new.left_free = page_size;
+	new.next_addr = new.addr;
+	new.prev = page;
+	new.next = 0;
 	if (page != 0)
-		page->next = new;
+		page->next = &new;
 	else
-		page = new;
-	new->next = 0;
-	increment_page_number(type);
-	create_new_chunk(new, page_size);
-	return (assign_alloc(new, size, type));
+		page = &new;
+	assign_alloc(page, type);
+	return (create_new_chunk(&new, size));
 }
 
 void		*create_large_page(size_t size)
@@ -96,7 +105,7 @@ void		*create_large_page(size_t size)
 
 void		*ft_malloc(size_t size)
 {
-	t_page		page;
+	t_page		*page;
 	t_page		*prev;
 	size_t		type;
 
@@ -118,23 +127,29 @@ void		*ft_malloc(size_t size)
 	{
 		printf("Small malloc detected\n");
 		page = area.small;
-		type = TINY_SIZE;
+		type = SMALL_SIZE;
 	}
 	else
 	{
 		printf("Large malloc detected\n");
 		printf("Will wait for this one, i skip.\n");
-		return (0);
+		return (0); // to del evidemment
 		// return (create_large_page(size));
 	}
 	if (page == 0)
-		return (create_new_page(page, size, type)); // Pas encore de page
+		return (create_new_page(0, size, type)); // Pas encore de page
 	while (page)
 	{
-		if (page->max_free >= size)
-			return (assign_alloc(page, size, type)); // Trouvé de la place dans un chunk
+		if (page->left_free >= size)
+		{
+			print_pages(page);
+			printf("@@@@@@@@@@@@\n");
+			print_pages(page);
+			printf("g trouve de la place dans une page\n");
+			return (create_new_chunk(page, size)); // Trouvé de la place dans une page
+		}
 		prev = page;
 		page = page->next;
 	}
-	return (create_new_page(prev, size, type)); // Pas de place dans les chunks -> creation d'une nouvelle page.
+	return (create_new_page(prev, size, type)); // Pas de place dans les pages -> creation d'une nouvelle page.
 }
