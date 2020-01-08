@@ -1,6 +1,0 @@
-total_size	28
-is_free		10
-USED   SIZE													 USED	SIZE				  UNUSED
-[01] | [00][0A] | [34][F5][xx][xx][xx][xx][xx][xx][xx][xx] | [01] | [00][02] | [FF][DE] | [00][00][00][00][00][00][00][00][00][00]
-/\
-0000 0001
